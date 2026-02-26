@@ -5,7 +5,6 @@ import time
 import sys
 import ctypes
 import winsound
-import ctypes.wintypes
 import numpy as np
 import sounddevice as sd
 import keyboard
@@ -90,7 +89,7 @@ def start_indicator():
 def stop_indicator():
     indicator.stop()
 
-print("Загрузка моделей...")
+print("Загрузка модели...")
 giga_model = onnx_asr.load_model("gigaam-v3-e2e-rnnt")
 
 # Состояния
