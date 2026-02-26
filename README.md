@@ -17,7 +17,7 @@
 1. **Скачать скрипт**: Просто скачайте файл `ruspeech.py` в отдельную папку.
 2. **Установить библиотеки**: Откройте терминал и установите все зависимости одной командой:
    
-pip install  os  threading  queue  time  sys  ctypes  winsound   numpy  sounddevice keyboard  pyperclip windows_toasts onnx_asr
+pip install   numpy  sounddevice keyboard  pyperclip  onnx_asr
  
 При первом распознавании будет выдано предупреждение и будет cкачана модель gigaam-v3-e2e-rnnt. Эта [модель](https://github.com/salute-developers/GigaAM/blob/main/README_ru.md) предобучена на 700 тысячах часах русской речи.
 
