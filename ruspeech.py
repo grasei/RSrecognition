@@ -103,10 +103,8 @@ indicator = None
 # Состояния для коррекции
 auto_correct_mode = False
 scroll_lock_presses = []
-correction_queue = queue.Queue()
 
-# Очередь для уведомлений
-notification_queue = queue.Queue()
+
 
 # Блокировка для безопасной работы с буфером обмена
 # Гарантирует, что автокоррекция не перезапишет текст во время вставки распознанного
@@ -123,8 +121,7 @@ def play_sound(action):
 
 
 
-def push_toast(title, body):
-    notification_queue.put((title, body))
+
 
 # --- ФУНКЦИИ В ОТДЕЛЬНЫХ ПОТОКАХ ---
 
@@ -173,15 +170,13 @@ def process_audio():
         text = giga_model.recognize(data, sample_rate=16000).strip()
         if text:
             # БЛОКИРОВКА: Вставка происходит атомарно
+            
             with clipboard_lock:
                 pyperclip.copy(text)
                 keyboard.press_and_release('ctrl+v')
             
             print(f"Распознано: {text}")
-            
-            if auto_correct_mode:
-                print("Добавлено в очередь на коррекцию.")
-                correction_queue.put(text)
+   
     except Exception as e:
         print(f"Ошибка распознавания: {e}")
     finally:
