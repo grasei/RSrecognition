@@ -103,12 +103,14 @@ indicator = None
 # Состояния для коррекции
 auto_correct_mode = False
 scroll_lock_presses = []
+#Использование в проверке того, был ли пробел после предыдущего распознанного текста.
+# Храним ID последнего активного окна и последний символ
+last_hwnd = None
+last_char = ""
 
-
-
-# Блокировка для безопасной работы с буфером обмена
-# Гарантирует, что автокоррекция не перезапишет текст во время вставки распознанного
-clipboard_lock = threading.Lock()
+def get_active_window_handle():
+    """Получает идентификатор текущего активного окна в Windows"""
+    return ctypes.windll.user32.GetForegroundWindow()
 
 def play_sound(action):
     s = {"start": [(440, 100), (660, 100)], "stop": [(660, 100), (440, 100)], 
@@ -155,12 +157,19 @@ def record_loop():
 
 def process_audio():
     global audio_buffer
+    global last_char
+    global last_hwnd
     if not audio_buffer: 
         return
-
-
+    
     global indicator
     try:
+                # Проверяем активное окно ДО вставки
+        current_hwnd = get_active_window_handle()
+                # Если окно сменилось — сбрасываем память символа
+        if current_hwnd != last_hwnd:
+            last_char = ""
+            last_hwnd = current_hwnd
         # Склеиваем и гарантируем float32 (GigaAM критичен к типу)
         data = np.concatenate(audio_buffer, axis=0).flatten().astype(np.float32)
         # сразу освобождаем глобальный буфер
@@ -169,12 +178,16 @@ def process_audio():
         # Параметры beam_size и language здесь не нужны, модель заточена под RU
         text = giga_model.recognize(data, sample_rate=16000).strip()
         if text:
-            # БЛОКИРОВКА: Вставка происходит атомарно
-            
-            with clipboard_lock:
-                pyperclip.copy(text)
-                keyboard.press_and_release('ctrl+v')
-            
+            # 1. ПРОВЕРКА: Нужен ли пробел ПЕРЕД текущим текстом?
+            # Если предыдущий текст закончился не на пробел, добавляем его в начало
+            if last_char and not last_char.isspace():
+                text = " " + text
+
+            pyperclip.copy(text)
+
+            keyboard.press_and_release('ctrl+v')
+                        # 3. ЗАПОМИНАЕМ последний символ для следующего раза
+            last_char = text[-1]
             print(f"Распознано: {text}")
    
     except Exception as e:
