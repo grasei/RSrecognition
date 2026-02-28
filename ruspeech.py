@@ -20,11 +20,18 @@ if ctypes.windll.kernel32.GetLastError() == 183:
     time.sleep(1)
     sys.exit(0)
 
+def set_console_title(title):
+    try:
+        ctypes.windll.kernel32.SetConsoleTitleW(title)
+    except Exception: 
+        pass
+
 class CursorOverlay:
     def __init__(self):
-        self.root = None
         self.queue = queue.Queue()
         self.running = True
+        self.root = None
+        set_console_title("🎙️ Диктовка")
 
     def _create_window(self):
         self.root = tk.Tk()
@@ -32,62 +39,89 @@ class CursorOverlay:
         self.root.attributes("-topmost", True)
         self.root.config(bg='white')
         self.root.wm_attributes("-transparentcolor", "white")
-        
-        # Скрываем окно сразу после создания
+        # Делаем индикатор чуть прозрачным (неоновый эффект)
+        self.root.attributes("-alpha", 0.85)
         self.root.withdraw() 
 
-        self.canvas = tk.Canvas(self.root, width=22, height=22, bg='white', highlightthickness=0)
-        self.indicator = self.canvas.create_oval(2, 2, 20, 20, fill="gray", outline="black")
-        self.canvas.pack()
+        # 1. Холст с небольшим запасом для тени
+        self.canvas = tk.Canvas(self.root, width=36, height=36, bg='white', highlightthickness=0)
 
+
+        # 3. Основной ЦВЕТНОЙ КРУГ
+        # Центр теперь смещен в (18, 18) из-за размера холста 36
+        self.indicator = self.canvas.create_oval(4, 4, 30, 30, fill="red", outline="white", width=2)
+
+        # 4. Символ ВНУТРИ (строго по центру основного круга)
+        self.inner_icon = self.canvas.create_text(
+            17, 17, # Центр круга 4-30 это 17
+            text="", 
+            font=("Arial", 11, "bold"), 
+            fill="black",
+            anchor="center"
+        )
+
+        self.canvas.pack()
+        
+        self.canvas.pack()
         self._update_loop()
         self.root.mainloop()
 
     def _update_loop(self):
         if not self.running:
-            self.root.destroy()
+            if self.root: 
+                self.root.destroy()
             return
-        
         try:
             while True:
-                new_status = self.queue.get_nowait()
-                if new_status == "hidden":
-                    self.root.withdraw()  # ПОЛНОСТЬЮ убираем окно и процесс отрисовки
+                status = self.queue.get_nowait()
+                if status == "hidden":
+                    self.root.withdraw()
+                    set_console_title("🎙️ Диктовка")
                 else:
-                    self._change_color(new_status)
-                    self.root.deiconify() # Возвращаем окно на экран
-        except queue.Empty:
+                    self._apply_theme(status)
+                    self.root.deiconify()
+        except queue.Empty: 
             pass
         
-        # Если окно активно, двигаем его
-        if self.root.state() == "normal":
-            x = self.root.winfo_pointerx() + 18
-            y = self.root.winfo_pointery() + 18
+        if self.root.winfo_viewable():
+            # Позиция у кончика курсора
+            x, y = self.root.winfo_pointerx() + 12, self.root.winfo_pointery() + 12
             self.root.geometry(f"+{x}+{y}")
         
-        self.root.after(10, self._update_loop)
+        self.root.after(15, self._update_loop)
 
-    def _change_color(self, status):
-        colors = {
-            "recording": "red",
-            "paused": "yellow",
-            "processing": "#00FF00" # Зеленый
+    def _apply_theme(self, status):
+        # Настройка: Цвет круга, Текст внутри, Заголовок окна
+        themes = {
+            "recording":  {"color": "#FF3B30", "inner": "", "title": "🔴 ЗАПИСЬ..."}, # Насыщенный красный
+            "paused":     {"color": "#EFF308", "inner": "⏸️", "title": "⏸️ ПАУЗА"},    # Яркий желтый
+            "processing": {"color": "#34C759", "inner": "⏳", "title": "⏳ ОБРАБОТКА..."} # Сочный зеленый
         }
-        color = colors.get(status, "gray")
-        self.canvas.itemconfig(self.indicator, fill=color, outline="black")
+        
+        data = themes.get(status, {"color": "gray", "inner": "?", "title": "🎙️ GIGA"})
+        
+        # Меняем цвет фигуры у курсора (Tkinter это делает ЦВЕТНЫМ)
+        self.canvas.itemconfig(self.indicator, fill=data["color"])
+        # Меняем внутренний символ (ч/б текст поверх цвета)
+        self.canvas.itemconfig(self.inner_icon, text=data["inner"])
+        # Меняем заголовок в панели задач (Windows рисует ЦВЕТНЫЕ эмодзи)
+        set_console_title(data["title"])
 
     def set_status(self, status):
         self.queue.put(status)
 
+    def stop(self):
+        self.running = False
 
-# --- Использование ---
+# --- ИНИЦИАЛИЗАЦИЯ ---
 def start_indicator():
     overlay = CursorOverlay()
     t = threading.Thread(target=overlay._create_window, daemon=True)
     t.start()
     return overlay
-def stop_indicator():
-    indicator.stop()
+
+# Создаем глобальный объект индикатора
+indicator = start_indicator()
 
 print("Загрузка модели...")
 giga_model = onnx_asr.load_model("gigaam-v3-e2e-rnnt")
