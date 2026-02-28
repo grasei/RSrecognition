@@ -35,4 +35,4 @@ pip install   numpy  sounddevice keyboard  pyperclip  onnx_asr
 ## Удаление
 1. pip uninstall   numpy  sounddevice keyboard  pyperclip  onnx_asr
 2. Удалить файл `ruspeech.py`
-3. Удалить модель из папки C:\Users\<Имя_пользователя>\.cache\huggingface\hub 
+3. Удалить модель из папки C:\Users\<Имя_пользователя>\.cache\huggingface\hub
