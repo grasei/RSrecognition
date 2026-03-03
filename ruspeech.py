@@ -11,6 +11,7 @@ import keyboard
 import pyperclip
 import onnx_asr
 import tkinter as tk
+import winreg
 
 
 # --- ИНИЦИАЛИЗАЦИЯ ---
@@ -25,7 +26,18 @@ def set_console_title(title):
         ctypes.windll.kernel32.SetConsoleTitleW(title)
     except Exception: 
         pass
+def get_target_key():
+    try:
+        # Проверяем реестр один раз при старте
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\Keyboard") as key:
+            val, _ = winreg.QueryValueEx(key, "PrintScreenKeyForSnippingEnabled")
+            if val == 1:
+                return "left windows"
+    except Exception:
+        pass
+    return "print screen"
 
+TARGET_KEY = get_target_key()
 class CursorOverlay:
     def __init__(self):
         self.queue = queue.Queue()
@@ -239,8 +251,9 @@ def on_key_event(e):
     if e.event_type == 'down':
  
             
-        if e.name == 'print screen': 
-            async_toggle_recording()
+        if e.name == TARGET_KEY: 
+            if TARGET_KEY == "print screen" or keyboard.is_pressed('ctrl'):
+                async_toggle_recording()
 
 
         elif e.name == 'right ctrl' and is_recording: 
@@ -262,7 +275,12 @@ if __name__ == "__main__":
     indicator = start_indicator()
     indicator.set_status("hidden") # Сразу прячем после запуска
     print("Система готова.")
-    print("Print Screen    - Запись")
+    if TARGET_KEY == "print screen":
+        print("Print Screen    - Запись")
+    else :
+        print("Ctrl + WIN      - Запись")
+
+
     print("Right Ctrl      - Пауза")
     print("Esc три раза    - Выход")
     keyboard.wait()
