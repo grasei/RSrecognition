@@ -17,13 +17,13 @@
 1. **Скачать скрипт**: Просто скачайте файл `ruspeech.py` в отдельную папку.
 2. **Установить библиотеки**: Откройте терминал и установите все зависимости одной командой:
    
-pip install   numpy  sounddevice keyboard  pyperclip  onnx_asr
+pip install   numpy  sounddevice keyboard  pyperclip  onnx_asr 
  
 При первом распознавании будет выдано предупреждение и будет cкачана модель gigaam-v3-e2e-rnnt. Эта [модель](https://github.com/salute-developers/GigaAM/blob/main/README_ru.md) предобучена на 700 тысячах часах русской речи.
 
 
 ## Клавиши управления
-1. **Запись и прекращение записи**: Print Screen.  В параметрах системы Параметры — Специальные возможности — Клавиатура опция «Используйте клавишу PRINT SCREEN для открытия захвата» должна отключена. 
+1. **Запись и прекращение записи**: Print Screen, если не используется для захвата экрана.  В этом случеа в параметрах системы Параметры — Специальные возможности — Клавиатура опция «Используйте клавишу PRINT SCREEN для открытия захвата» должна отключена.  В противном случае используется Ctrl+Win.
 2. **Приостановка записи**: Правый Ctrl.
 
 ## Журналирование
@@ -37,6 +37,6 @@ pip install   numpy  sounddevice keyboard  pyperclip  onnx_asr
 
 
 ## Удаление
-1. pip uninstall   numpy  sounddevice keyboard  pyperclip  onnx_asr
+1. pip uninstall   numpy  sounddevice keyboard  pyperclip  onnx_asr 
 2. Удалить файл `ruspeech.py`
 3. Удалить модель из папки C:\Users\<Имя_пользователя>\.cache\huggingface\hub
