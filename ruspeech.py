@@ -244,11 +244,16 @@ def process_audio():
             audio_buffer = [] 
             indicator.set_status("hidden")
 
+current_pressed_key = None 
 # --- ОБРАБОТЧИК КЛАВИШ ---
 def on_key_event(e):
-    global is_paused, esc_presses, is_recording, auto_correct_mode, scroll_lock_presses, last_char
+    global is_paused, esc_presses, is_recording, auto_correct_mode, scroll_lock_presses, last_char,current_pressed_key
     
+    # 1. ЗАЩИТА ОТ АВТОПОВТОРА (в самом начале)
     if e.event_type == 'down':
+        if current_pressed_key == e.name:
+            return  # Игнорируем дубликаты от Windows
+        current_pressed_key = e.name # Фиксируем новое нажатие
  
             
         if e.name == TARGET_KEY: 
@@ -272,6 +277,11 @@ def on_key_event(e):
             if len(esc_presses) >= 3:
                 winsound.Beep(200, 600)
                 os._exit(0)
+        # 2. СБРОС ФЛАГА (при отпускании любой клавиши)
+    elif e.event_type == 'up':
+        if e.name == current_pressed_key:
+            current_pressed_key = None
+            
 if __name__ == "__main__":
     keyboard.hook(on_key_event)
     indicator = start_indicator()
