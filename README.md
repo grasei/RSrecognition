@@ -21,7 +21,7 @@ pip install   numpy  sounddevice keyboard  pyperclip  onnx_asr
  
 При первом распознавании будет выдано предупреждение и будет cкачана модель gigaam-v3-e2e-rnnt. Эта [модель](https://github.com/salute-developers/GigaAM/blob/main/README_ru.md) предобучена на 700 тысячах часах русской речи.
 
-Если вы не хотите ставить pytnon в библиотеки, вы можете воспользоваться [готовой сборкой](https://github.com/grasei/RSrecognition/releases/latest). Смотрите  раздел по установке из готовой сборки ниже.
+Если вы не хотите ставить pytnon и библиотеки, вы можете воспользоваться [готовой сборкой](https://github.com/grasei/RSrecognition/releases/latest). Смотрите  раздел по установке из готовой сборки ниже.
 
 
 ## Клавиши управления
