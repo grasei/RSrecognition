@@ -246,7 +246,7 @@ def process_audio():
 
 # --- ОБРАБОТЧИК КЛАВИШ ---
 def on_key_event(e):
-    global is_paused, esc_presses, is_recording, auto_correct_mode, scroll_lock_presses
+    global is_paused, esc_presses, is_recording, auto_correct_mode, scroll_lock_presses, last_char
     
     if e.event_type == 'down':
  
@@ -262,6 +262,8 @@ def on_key_event(e):
             print("Пауза") if is_paused else print("Продолжение")
             if indicator:
                 indicator.set_status("paused" if is_paused else "recording")
+        if e.name == 'enter':
+            last_char = ""
         elif e.name == 'esc':
             now = time.time()
             if len(esc_presses) > 0 and now - esc_presses[-1] > 1.5:
