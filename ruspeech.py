@@ -12,6 +12,7 @@ import pyperclip
 import onnx_asr
 import tkinter as tk
 import winreg
+from autocorrect import Speller
 
 
 # --- ИНИЦИАЛИЗАЦИЯ ---
@@ -137,7 +138,10 @@ indicator = start_indicator()
 
 print("Загрузка модели...")
 giga_model = onnx_asr.load_model("gigaam-v3-e2e-rnnt")
-
+print("Инициализация текстового корректора...")
+corrector = Speller(lang='ru')
+# "Прогрев": принудительно загружаем словарь в ОЗУ, чтобы не было задержки на первой фразе
+_ = corrector("привет")
 # Состояния
 is_recording = False
 
@@ -147,7 +151,7 @@ audio_queue = queue.Queue()
 esc_presses = []
 indicator = None 
 # Состояния для коррекции
-auto_correct_mode = False
+auto_correct_mode = True
 scroll_lock_presses = []
 #Использование в проверке того, был ли пробел после предыдущего распознанного текста.
 # Храним ID последнего активного окна и последний символ
@@ -224,7 +228,17 @@ def process_audio():
         # Параметры beam_size и language здесь не нужны, модель заточена под RU
         text = giga_model.recognize(data, sample_rate=16000).strip()
         if text:
-            # 1. ПРОВЕРКА: Нужен ли пробел ПЕРЕД текущим текстом?
+            # 1. КОРРЕКЦИЯ: Если включена, исправляем текст
+            if auto_correct_mode:
+                text = corrector(text)
+            # На всякий случай очищаем от случайных двойных пробелов на концах после корректора
+            text = text.strip()
+            # сохраняем чистый последний символ ИСПРАВЛЕННОЙ фразы ДО добавления пробела в начало
+            if text:
+                current_last_char = text[-1]  
+            else: 
+                current_last_char = ""
+            # 3. ПРОВЕРКА: Нужен ли пробел ПЕРЕД текущим текстом?
             # Если предыдущий текст закончился не на пробел, добавляем его в начало
             if last_char and not last_char.isspace():
                 text = " " + text
@@ -233,7 +247,7 @@ def process_audio():
 
             keyboard.press_and_release('ctrl+v')
                         # 3. ЗАПОМИНАЕМ последний символ для следующего раза
-            last_char = text[-1]
+            last_char = current_last_char
             print(f"Распознано: {text}")
    
     except Exception as e:
